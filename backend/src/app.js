@@ -8,7 +8,7 @@ import authRoutes from './routes/auth.routes.js';
 const app = express();
 app.use(express.json());
 
-// a simple route to test if the server is running or not and to check if the app is working or not
+// a simple route to test if the server is running or not
 app.get('/', (req, res) => {
   res.send('Hello World!');
 });
