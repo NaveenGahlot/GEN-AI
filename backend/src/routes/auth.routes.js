@@ -1,5 +1,6 @@
 import express from 'express';
-import { loginUser, logoutUser, registerUser } from '../controllers/auth.controller.js';
+import { getMe, loginUser, logoutUser, registerUser } from '../controllers/auth.controller.js';
+import authenticateUser from '../middlewares/auth.middleware.js';
 
 const router = express.Router();
 
@@ -16,10 +17,17 @@ router.post('/register', registerUser);
  */
 router.post('/login', loginUser);
 /**
- * @route POST /api/auths/logout
- * @description Logout a user
+ * @route GET /api/auths/logout
+ * @description Logout a user by clearing the cookie
  * @access Public
  */
-router.post('/logout', logoutUser);
+router.get('/logout', logoutUser);
+
+/**
+ * @route GET /api/auths/get-me
+ * @description Get the authenticated user's information
+ * @access Private
+ */
+router.get('/get-me', authenticateUser, getMe);
 
 export default router;
