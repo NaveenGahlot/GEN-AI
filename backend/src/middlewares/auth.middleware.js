@@ -3,7 +3,7 @@ import { BlacklistToken } from "../models/blacklist.model.js";
 
 
 /** 
- *  @name authenticateUser
+ * @name authenticateUser
  * @description This middleware will authenticate the user by verifying the JWT token from the cookie. If the token is valid, it will allow the request to proceed to the next middleware or route handler. If the token is invalid or not present, it will return an unauthorized error response.
  * @access Private
  */
