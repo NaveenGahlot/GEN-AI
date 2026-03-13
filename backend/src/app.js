@@ -1,6 +1,6 @@
 import express from 'express';
 import cookieParser from 'cookie-parser';
-
+import cors from 'cors';
 
 // required all the routes here
 import authRoutes from './routes/auth.routes.js';
@@ -9,6 +9,10 @@ import authRoutes from './routes/auth.routes.js';
 const app = express();
 app.use(express.json());
 app.use(cookieParser());
+app.use(cors({
+  origin: "http://localhost:5173",
+  Credential: true
+}))
 
 // a simple route to test if the server is running or not
 app.get('/', (req, res) => {
