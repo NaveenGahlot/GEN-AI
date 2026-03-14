@@ -1,6 +1,5 @@
 import mongoose from 'mongoose';
 
-
 /**
  * - job description schema: String
  * - resume text: String
