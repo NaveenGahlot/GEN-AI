@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router'
 import { useAuth } from '../hooks/useAuth'
 
 const Register = () => {
-    const [loading, handleRegister] = useAuth()
+    const { loading, handleRegister } = useAuth()
     const navigate = useNavigate()
     const [username, setUsername] = useState("")
     const [email, setEmail] = useState("")

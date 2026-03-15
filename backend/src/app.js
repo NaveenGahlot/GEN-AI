@@ -12,7 +12,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
   origin: "http://localhost:5173",
-  Credential: true
+  credentials: true
 }))
 
 // a simple route to test if the server is running or not
