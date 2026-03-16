@@ -1,30 +1,46 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import "../style/home.scss"
-import { useRef } from 'react' 
-// import { useInterview } from '../context/interviewContext'
-// import { useNavigate } from 'react-router-dom'
+import { useInterview } from '../hooks/useInterview'
+import { useNavigate } from 'react-router'
 
 const Home = () => {
-
-    // const { loading, generateReport,reports } = useInterview()
+    const { loading, generateReport, getReports, reports } = useInterview()
     const [ jobDescription, setJobDescription ] = useState("")
     const [ selfDescription, setSelfDescription ] = useState("")
     const resumeInputRef = useRef()
 
+    const navigate = useNavigate()
+
+    useEffect(() => {
+        getReports().catch((err) => console.error('Failed to load reports', err))
+    }, [])
 
     const handleGenerateReport = async () => {
-        // const resumeFile = resumeInputRef.current.files[ 0 ]
-        // const data = await generateReport({ jobDescription, selfDescription, resumeFile })
-        // navigate(`/interview/${data._id}`)
+        if (!jobDescription?.trim()) {
+            alert('Job description is required.')
+            return
+        }
+
+        const resumeFile = resumeInputRef.current?.files?.[0]
+        if (!resumeFile && !selfDescription?.trim()) {
+            alert('Either upload a resume or enter a quick self-description.')
+            return
+        }
+
+        const data = await generateReport({ jobDescription, selfDescription, resumeFile })
+        if (data && data._id) {
+            await getReports()
+            navigate(`/interview/${data._id}`)
+        }
     }
 
-    // if (loading) {
-    //     return (
-    //         <main className='loading-screen'>
-    //             <h1>Loading your interview plan...</h1>
-    //         </main>
-    //     )
-    // }
+    if (loading) {
+        return (
+            <main className='loading-screen'>
+                <h1>Loading your interview plan...</h1>
+            </main>
+        )
+    }
 
   return (
     <div className='home-page'>
@@ -49,12 +65,13 @@ const Home = () => {
                             <span className='badge badge--required'>Required</span>
                         </div>
                         <textarea
+                            value={jobDescription}
                             onChange={(e) => { setJobDescription(e.target.value) }}
                             className='panel__textarea'
                             placeholder={`Paste the full job description here...\ne.g. 'Senior Frontend Engineer at Google requires proficiency in React, TypeScript, and large-scale system design...'`}
                             maxLength={5000}
                         />
-                        <div className='char-counter'>0 / 5000 chars</div>
+                        <div className='char-counter'>{jobDescription.length} / 5000 chars</div>
                     </div>
 
                     {/* Vertical Divider */}
@@ -123,7 +140,14 @@ const Home = () => {
             </div>
 
             {/* Recent Reports List */}
-            {/* {reports.length > 0 && (
+            {reports.length === 0 && !loading && (
+                <section className='recent-reports recent-reports--empty'>
+                    <h2>No Recent Interview Plans</h2>
+                    <p>Generate your first plan and it will appear here for quick access.</p>
+                </section>
+            )}
+
+            {reports.length > 0 && (
                 <section className='recent-reports'>
                     <h2>My Recent Interview Plans</h2>
                     <ul className='reports-list'>
@@ -136,7 +160,7 @@ const Home = () => {
                         ))}
                     </ul>
                 </section>
-            )} */}
+            )}
 
             {/* Page Footer */}
             <footer className='page-footer'>

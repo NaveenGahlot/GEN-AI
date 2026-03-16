@@ -6,14 +6,20 @@ const Protected = ({ children }) => {
     const { loading, user } = useAuth()
     const navigate = useNavigate()
 
-    if(loading){
-        return(
+    React.useEffect(() => {
+        if (!loading && !user) {
+            navigate('/login')
+        }
+    }, [loading, user, navigate])
+
+    if (loading) {
+        return (
             <main><h1>Loading...</h1></main>
         )
     }
 
-    if(!user){
-        navigate('/login')
+    if (!user) {
+        return null
     }
     
     return children
