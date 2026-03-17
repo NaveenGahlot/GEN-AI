@@ -1,9 +1,15 @@
 import { GoogleGenAI } from "@google/genai";
 import puppeteer from 'puppeteer'
+import { mkdirSync } from "node:fs";
+import { join } from "node:path";
 
 // The client gets the API key from the environment variable `GEMINI_API_KEY`.
 // We will instantiate this inside the function so dotenv has time to load it first
 let ai;
+const puppeteerCacheDir = process.env.PUPPETEER_CACHE_DIR || join(process.cwd(), ".cache", "puppeteer");
+
+process.env.PUPPETEER_CACHE_DIR = puppeteerCacheDir;
+mkdirSync(puppeteerCacheDir, { recursive: true });
 
 function getAiClient() {
     if (!process.env.GOOGLE_GENAI_API_KEY) {
@@ -103,6 +109,7 @@ async function generateInterviewReport({ resume, selfDescription, jobDescription
 async function generatePdfFromHtml(htmlContent) {
     const browser = await puppeteer.launch({
         headless: true,
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || puppeteer.executablePath(),
         args: ["--no-sandbox", "--disable-setuid-sandbox"]
     })
     const page = await browser.newPage();
