@@ -2,7 +2,7 @@ import axios from 'axios'
 import { clearAuthToken, getAuthToken } from '../../../lib/authToken'
 
 const api = axios.create({
-    baseURL: "https://roleplay-ai-rob1.onrender.com/",
+    baseURL: "https://roleplay-ai-rob1.onrender.com",
     withCredentials: true
 })
 
