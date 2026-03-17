@@ -1,10 +1,19 @@
 import { GoogleGenAI } from "@google/genai";
 import puppeteer from 'puppeteer'
-import z from 'zod'
 
 // The client gets the API key from the environment variable `GEMINI_API_KEY`.
 // We will instantiate this inside the function so dotenv has time to load it first
 let ai;
+
+function getAiClient() {
+    if (!ai) {
+        ai = new GoogleGenAI({
+            apiKey: process.env.GOOGLE_GENAI_API_KEY
+        });
+    }
+
+    return ai;
+}
 
 // Use native JSON schema configuration instead of zod-to-json-schema to avoid parsing bugs
 const interviewReportSchema = {
@@ -68,11 +77,7 @@ const interviewReportSchema = {
 };
 
 async function generateInterviewReport({ resume, selfDescription, jobDescription }) {
-    if (!ai) {
-        ai = new GoogleGenAI({
-            apiKey: process.env.GOOGLE_GENAI_API_KEY
-        });
-    }
+    const client = getAiClient();
 
     const prompt = `Generate an interview report for a candidate with the following details:
                         Resume: ${resume}
@@ -80,7 +85,7 @@ async function generateInterviewReport({ resume, selfDescription, jobDescription
                         Job Description: ${jobDescription}
                 `
 
-    const response = await ai.models.generateContent({
+    const response = await client.models.generateContent({
         model: "gemini-3-flash-preview",
         contents: prompt,
         config: {
@@ -92,7 +97,10 @@ async function generateInterviewReport({ resume, selfDescription, jobDescription
 }
 
 async function generatePdfFromHtml(htmlContent) {
-    const browser = await puppeteer.launch()
+    const browser = await puppeteer.launch({
+        headless: true,
+        args: ["--no-sandbox", "--disable-setuid-sandbox"]
+    })
     const page = await browser.newPage();
     await page.setContent(htmlContent, { waitUntil: "networkidle0" })
 
@@ -112,9 +120,17 @@ async function generatePdfFromHtml(htmlContent) {
 
 
 async function generateResumePdf({ resume, selfDescription, jobDescription }){
-    const resumePdfSchema = z.object({
-        html: z.string().describe("The HTML content of the resume which can be converted to PDF using any library like puppeteer")
-    })
+    const client = getAiClient();
+    const resumePdfSchema = {
+        type: "OBJECT",
+        properties: {
+            html: {
+                type: "STRING",
+                description: "The HTML content of the resume which can be converted to PDF using any library like puppeteer"
+            }
+        },
+        required: ["html"]
+    }
 
     const prompt = `Generate resume for a candidate with the following details:
                         Resume: ${resume}
@@ -128,7 +144,7 @@ async function generateResumePdf({ resume, selfDescription, jobDescription }){
                         The content should be ATS friendly, i.e. it should be easily parsable by ATS systems without losing important information.
                         The resume should not be so lengthy, it should ideally be 1-2 pages long when converted to PDF. Focus on quality rather than quantity and make sure to include all the relevant information that can increase the candidate's chances of getting an interview call for the given job description.
                     `
-    const response = await ai.models.generateContent({
+    const response = await client.models.generateContent({
         model: "gemini-3-flash-preview",
         contents: prompt,
         config: {
