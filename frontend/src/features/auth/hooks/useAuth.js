@@ -2,6 +2,7 @@ import { useContext, useEffect } from "react"
 import { toast } from "react-toastify"
 import { AuthContext } from "../auth.context"
 import { getMe, login, logout, register } from "../services/auth.api"
+import { clearAuthToken, setAuthToken } from "../../../lib/authToken"
 
 export const useAuth = () => {
     const context = useContext(AuthContext)
@@ -11,6 +12,7 @@ export const useAuth = () => {
         setLoading(true)
         try {
             const data = await login({ email, password })
+            setAuthToken(data?.token)
             setUser(data.user)
             toast.success('Login successful. Welcome!')
             return true
@@ -27,6 +29,7 @@ export const useAuth = () => {
         setLoading(true)
         try {
             const data = await register({ username, email, password })
+            setAuthToken(data?.token)
             setUser(data.user)
             toast.success('Signup successful. You are now logged in.')
             return true
@@ -42,8 +45,9 @@ export const useAuth = () => {
     const handleLogout = async () => {
         setLoading(true)
         try {
-            const data = await logout()
+            await logout()
             setUser(null)
+            clearAuthToken()
             toast.info('Logged out successfully.')
         } catch (err) {
             const errMsg = err?.response?.data?.message || err?.message || 'Logout failed.'
@@ -57,8 +61,9 @@ export const useAuth = () => {
         const getAndSetUser = async () => {
             try {
                 const data = await getMe()
-                setUser(data.user)
-            } catch (err) {
+                if (data?.user) setUser(data.user)
+                else setUser(null)
+            } catch {
                 setUser(null)
             } finally {
                 setLoading(false)

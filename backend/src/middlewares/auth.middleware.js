@@ -1,6 +1,13 @@
 import jwt from "jsonwebtoken";
 import { BlacklistToken } from "../models/blacklist.model.js";
 
+function getBearerToken(req) {
+    const header = req.headers?.authorization || req.headers?.Authorization;
+    if (!header || typeof header !== "string") return null;
+    const [scheme, token] = header.split(" ");
+    if (scheme?.toLowerCase() !== "bearer") return null;
+    return token || null;
+}
 
 /** 
  * @name authenticateUser
@@ -10,7 +17,7 @@ import { BlacklistToken } from "../models/blacklist.model.js";
 
 const authenticateUser = async (req, res, next) => {
     try {
-        const token = req.cookies.jwt; // Use the cookie name set in AuthToken.js
+        const token = req.cookies?.jwt || getBearerToken(req); // cookie first, then Authorization header
         if (!token) {
             return res.status(401).json({ message: "Unauthorized: No token provided" });
         }

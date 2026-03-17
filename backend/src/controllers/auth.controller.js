@@ -88,11 +88,19 @@ export const loginUser = async (req, res) => {
  * @access Public
  */
 export const logoutUser = async (req, res) => {
-    const token = req.cookies.jwt; // Use the cookie name set in AuthToken.js
+    const authHeader = req.headers?.authorization || req.headers?.Authorization;
+    const bearerToken = (typeof authHeader === "string" && authHeader.startsWith("Bearer "))
+        ? authHeader.slice(7)
+        : null;
+    const token = req.cookies?.jwt || bearerToken; // cookie first, then Authorization header
     if (token) {
         await BlacklistToken.create({ token })
     }
-    res.clearCookie("jwt")
+    res.clearCookie("jwt", {
+        httpOnly: true,
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        secure: process.env.NODE_ENV === "production"
+    })
     res.status(200).json({
         message: "User logged out successfully"
     })
