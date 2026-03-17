@@ -67,6 +67,10 @@ export const useInterview = () =>{
             setReports([])
             return []
         } catch (error) {
+            if (error?.response?.status === 401) {
+                setReports([])
+                return []
+            }
             const errMsg = error?.response?.data?.message || error?.message || 'Failed to load reports.'
             toast.error(errMsg)
             console.log(error)

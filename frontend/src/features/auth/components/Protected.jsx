@@ -8,7 +8,7 @@ const Protected = ({ children }) => {
 
     React.useEffect(() => {
         if (!loading && !user) {
-            navigate('/login')
+            navigate('/login', { replace: true })
         }
     }, [loading, user, navigate])
 

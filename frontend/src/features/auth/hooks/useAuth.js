@@ -1,7 +1,7 @@
-import { useContext, useEffect } from "react"
+import { useContext } from "react"
 import { toast } from "react-toastify"
 import { AuthContext } from "../auth.context"
-import { getMe, login, logout, register } from "../services/auth.api"
+import { login, logout, register } from "../services/auth.api"
 import { clearAuthToken, setAuthToken } from "../../../lib/authToken"
 
 export const useAuth = () => {
@@ -56,21 +56,6 @@ export const useAuth = () => {
             setLoading(false)
         }
     }
-
-    useEffect(() => {
-        const getAndSetUser = async () => {
-            try {
-                const data = await getMe()
-                if (data?.user) setUser(data.user)
-                else setUser(null)
-            } catch {
-                setUser(null)
-            } finally {
-                setLoading(false)
-            }
-        }
-        getAndSetUser()
-    }, [])
 
     return { user, loading, handleLogin, handleRegister, handleLogout }
 }
