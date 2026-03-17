@@ -94,6 +94,7 @@ async function generateInterviewReport({ resume, selfDescription, jobDescription
 async function generatePdfFromHtml(htmlContent) {
     const browser = await puppeteer.launch({
         headless: true,
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
         args: [
             "--no-sandbox",
             "--disable-setuid-sandbox",
@@ -120,49 +121,146 @@ async function generatePdfFromHtml(htmlContent) {
     }
 }
 
+function escapeHtml(value = "") {
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
+function normalizeLines(text = "") {
+    return String(text)
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean);
+}
+
+function buildResumeHtml({ resume, selfDescription, jobDescription }) {
+    const resumeLines = normalizeLines(resume);
+    const jobLines = normalizeLines(jobDescription);
+    const summaryLines = normalizeLines(selfDescription);
+
+    const heading = resumeLines[0] || "Professional Resume";
+    const subheading = resumeLines[1] || "Candidate Profile";
+    const coreHighlights = resumeLines.slice(2, 10);
+    const jobHighlights = jobLines.slice(0, 8);
+    const profileSummary = summaryLines.length > 0
+        ? summaryLines
+        : ["Experienced professional with relevant background aligned to the target role."];
+
+    return `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+            <title>${escapeHtml(heading)}</title>
+            <style>
+                * { box-sizing: border-box; }
+                body {
+                    margin: 0;
+                    font-family: Arial, Helvetica, sans-serif;
+                    color: #1f2937;
+                    background: #ffffff;
+                    line-height: 1.5;
+                    font-size: 12px;
+                }
+                .page {
+                    padding: 28px 32px;
+                }
+                .header {
+                    border-bottom: 3px solid #0f766e;
+                    padding-bottom: 12px;
+                    margin-bottom: 20px;
+                }
+                .header h1 {
+                    margin: 0;
+                    font-size: 28px;
+                    color: #0f172a;
+                }
+                .header p {
+                    margin: 6px 0 0;
+                    color: #475569;
+                    font-size: 14px;
+                }
+                .section {
+                    margin-bottom: 18px;
+                }
+                .section h2 {
+                    margin: 0 0 8px;
+                    font-size: 15px;
+                    color: #0f766e;
+                    text-transform: uppercase;
+                    letter-spacing: 0.08em;
+                }
+                .section p {
+                    margin: 0 0 8px;
+                    white-space: pre-wrap;
+                }
+                ul {
+                    margin: 0;
+                    padding-left: 18px;
+                }
+                li {
+                    margin-bottom: 6px;
+                }
+                .grid {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 18px;
+                }
+                .muted {
+                    color: #64748b;
+                }
+            </style>
+        </head>
+        <body>
+            <main class="page">
+                <header class="header">
+                    <h1>${escapeHtml(heading)}</h1>
+                    <p>${escapeHtml(subheading)}</p>
+                </header>
+
+                <section class="section">
+                    <h2>Professional Summary</h2>
+                    ${profileSummary.map((line) => `<p>${escapeHtml(line)}</p>`).join("")}
+                </section>
+
+                <section class="section grid">
+                    <div>
+                        <h2>Resume Highlights</h2>
+                        <ul>
+                            ${coreHighlights.map((line) => `<li>${escapeHtml(line)}</li>`).join("")}
+                        </ul>
+                    </div>
+                    <div>
+                        <h2>Target Role Focus</h2>
+                        <ul>
+                            ${jobHighlights.map((line) => `<li>${escapeHtml(line)}</li>`).join("")}
+                        </ul>
+                    </div>
+                </section>
+
+                <section class="section">
+                    <h2>Detailed Background</h2>
+                    <p>${escapeHtml(resumeLines.join("\n"))}</p>
+                </section>
+
+                <section class="section">
+                    <h2>Role Alignment Notes</h2>
+                    <p class="muted">${escapeHtml(jobLines.join("\n"))}</p>
+                </section>
+            </main>
+        </body>
+        </html>
+    `;
+}
+
 async function generateResumePdf({ resume, selfDescription, jobDescription }){
-    if (!ai) {
-        ai = new GoogleGenAI({
-            apiKey: process.env.GOOGLE_GENAI_API_KEY
-        });
-    }
-
-    const resumePdfSchema = {
-        type: "OBJECT",
-        properties: {
-            html: {
-                type: "STRING",
-                description: "The HTML content of the resume which can be converted to PDF using any library like puppeteer"
-            }
-        },
-        required: ["html"]
-    };
-
-    const prompt = `Generate resume for a candidate with the following details:
-                        Resume: ${resume}
-                        Self Description: ${selfDescription}
-                        Job Description: ${jobDescription}
-
-                        the response should be a JSON object with a single field "html" which contains the HTML content of the resume which can be converted to PDF using any library like puppeteer.
-                        The resume should be tailored for the given job description and should highlight the candidate's strengths and relevant experience. The HTML content should be well-formatted and structured, making it easy to read and visually appealing.
-                        The content of resume should be not sound like it's generated by AI and should be as close as possible to a real human-written resume.
-                        you can highlight the content using some colors or different font styles but the overall design should be simple and professional.
-                        The content should be ATS friendly, i.e. it should be easily parsable by ATS systems without losing important information.
-                        The resume should not be so lengthy, it should ideally be 1-2 pages long when converted to PDF. Focus on quality rather than quantity and make sure to include all the relevant information that can increase the candidate's chances of getting an interview call for the given job description.
-                    `
-    const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: prompt,
-        config: {
-            responseMimeType: "application/json",
-            responseSchema: resumePdfSchema,
-        }
-    })
-
-    const jsonContent = JSON.parse(response.text)
-    const pdfBuffer = await generatePdfFromHtml(jsonContent.html)
-
-    return pdfBuffer
+    const htmlContent = buildResumeHtml({ resume, selfDescription, jobDescription })
+    return generatePdfFromHtml(htmlContent)
 }
 
 export { generateInterviewReport, generateResumePdf };
