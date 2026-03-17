@@ -9,7 +9,7 @@ const createTokenAndSaveCookie = async(userId, res)=>{
     res.cookie("jwt", token, {
         httpOnly: true,
         secure: true,
-        sameSite: "strict",
+        sameSite: "none",
         maxAge: 24 * 60 * 60 * 1000
     });
     await userModel.findByIdAndUpdate(userId, { token: token });
