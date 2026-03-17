@@ -10,8 +10,21 @@ import interviewRouter from './routes/interview.routes.js';
 const app = express();
 app.use(express.json());
 app.use(cookieParser());
+
+const allowedOrigins = [
+  'https://roleplay-ai.netlify.app',
+  'http://localhost:5173'
+];
+
 app.use(cors({
-  origin: "https://roleplay-ai.netlify.app",
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    callback(new Error(`CORS policy: Origin ${origin} not allowed`));
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
