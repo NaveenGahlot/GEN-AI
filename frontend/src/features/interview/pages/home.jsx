@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react'
 import "../style/home.scss"
 import { useInterview } from '../hooks/useInterview'
 import { useNavigate } from 'react-router'
+import { toast } from 'react-toastify'
 
 const Home = () => {
     const { loading, generateReport, getReports, reports } = useInterview()
@@ -17,18 +18,19 @@ const Home = () => {
 
     const handleGenerateReport = async () => {
         if (!jobDescription?.trim()) {
-            alert('Job description is required.')
+            toast.error('Job description is required.')
             return
         }
 
         const resumeFile = resumeInputRef.current?.files?.[0]
         if (!resumeFile && !selfDescription?.trim()) {
-            alert('Either upload a resume or enter a quick self-description.')
+            toast.error('Either upload a resume or enter a quick self-description.')
             return
         }
 
         const data = await generateReport({ jobDescription, selfDescription, resumeFile })
         if (data && data._id) {
+            toast.success('Interview plan created! Redirecting...')
             await getReports()
             navigate(`/interview/${data._id}`)
         }
