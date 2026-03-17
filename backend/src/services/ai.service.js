@@ -1,7 +1,8 @@
 import { GoogleGenAI } from "@google/genai";
 import puppeteer from 'puppeteer'
-import { mkdirSync } from "node:fs";
+import { existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
+import { Browser, computeExecutablePath, detectBrowserPlatform, install } from "@puppeteer/browsers";
 
 // The client gets the API key from the environment variable `GEMINI_API_KEY`.
 // We will instantiate this inside the function so dotenv has time to load it first
@@ -107,9 +108,10 @@ async function generateInterviewReport({ resume, selfDescription, jobDescription
 }
 
 async function generatePdfFromHtml(htmlContent) {
+    const executablePath = await getChromeExecutablePath();
     const browser = await puppeteer.launch({
         headless: true,
-        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || puppeteer.executablePath(),
+        executablePath,
         args: ["--no-sandbox", "--disable-setuid-sandbox"]
     })
     const page = await browser.newPage();
@@ -127,6 +129,44 @@ async function generatePdfFromHtml(htmlContent) {
     await browser.close()
 
     return pdfBuffer
+}
+
+async function getChromeExecutablePath() {
+    if (process.env.PUPPETEER_EXECUTABLE_PATH && existsSync(process.env.PUPPETEER_EXECUTABLE_PATH)) {
+        return process.env.PUPPETEER_EXECUTABLE_PATH;
+    }
+
+    const platform = detectBrowserPlatform();
+
+    if (!platform) {
+        throw new Error("Unsupported platform for Puppeteer Chrome");
+    }
+
+    const buildId = puppeteer.browserVersion;
+    let executablePath = computeExecutablePath({
+        browser: Browser.CHROME,
+        buildId,
+        cacheDir: puppeteerCacheDir,
+        platform
+    });
+
+    if (!existsSync(executablePath)) {
+        await install({
+            browser: Browser.CHROME,
+            buildId,
+            cacheDir: puppeteerCacheDir,
+            platform
+        });
+
+        executablePath = computeExecutablePath({
+            browser: Browser.CHROME,
+            buildId,
+            cacheDir: puppeteerCacheDir,
+            platform
+        });
+    }
+
+    return executablePath;
 }
 
 
