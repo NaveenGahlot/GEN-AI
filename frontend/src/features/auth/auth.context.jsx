@@ -1,5 +1,6 @@
 import { createContext, useEffect, useState } from "react"; 
 import { getMe } from "./services/auth.api";
+import { getAuthToken } from "../../lib/authToken";
 
 export const AuthContext = createContext()
 
@@ -11,6 +12,16 @@ export const AuthProvider = ({ children })=>{
         let isMounted = true
 
         const bootstrapAuth = async () => {
+            const token = getAuthToken()
+
+            if (!token) {
+                if (isMounted) {
+                    setUser(null)
+                    setLoading(false)
+                }
+                return
+            }
+
             try {
                 const data = await getMe()
                 if (!isMounted) return
