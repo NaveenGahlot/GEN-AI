@@ -1,8 +1,8 @@
 import axios from 'axios'
-import { clearAuthToken, getAuthToken } from '../../../lib/authToken'
+import { apiBaseUrl, clearAuthToken, getAuthToken } from '../../../lib/authToken'
 
 const api = axios.create({
-    baseURL: "https://roleplay-ai-rob1.onrender.com",
+    baseURL: apiBaseUrl,
     withCredentials: true
 })
 

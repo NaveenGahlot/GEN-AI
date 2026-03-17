@@ -1,9 +1,9 @@
 import axios from "axios";
-import { clearAuthToken, getAuthToken } from "../../../lib/authToken";
+import { apiBaseUrl, clearAuthToken, getAuthToken } from "../../../lib/authToken";
 
 
 const api = axios.create({
-    baseURL: "https://roleplay-ai-rob1.onrender.com",
+    baseURL: apiBaseUrl,
     withCredentials: true
 })
 
@@ -81,7 +81,10 @@ export const generateResumePdf = async ({ interviewReportId }) => {
                 nextError.response = error.response
                 throw nextError
             } catch {
-                const nextError = new Error(errorText || "Failed to generate resume PDF.")
+                const isHtmlError = /<!DOCTYPE html>|<html/i.test(errorText)
+                const nextError = new Error(
+                    isHtmlError ? "Server failed to generate the resume PDF." : (errorText || "Failed to generate resume PDF.")
+                )
                 nextError.response = error.response
                 throw nextError
             }

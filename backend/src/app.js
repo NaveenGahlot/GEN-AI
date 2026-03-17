@@ -40,4 +40,16 @@ app.get('/', (req, res) => {
 app.use('/api/auths', authRoutes);
 app.use('/api/interviews', interviewRouter)
 
+app.use((err, req, res, next) => {
+  console.error(err);
+
+  if (res.headersSent) {
+    return next(err);
+  }
+
+  res.status(err.status || 500).json({
+    message: err.message || 'Internal server error'
+  });
+});
+
 export {app};
