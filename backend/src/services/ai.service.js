@@ -196,6 +196,42 @@ async function generateInterviewReport({ resume, selfDescription, jobDescription
     return parseJsonResponse(response, "Failed to generate interview report.");
 }
 
+async function getBrowserLaunchOptions() {
+    const userDataDir = await fs.mkdtemp(path.join(os.tmpdir(), "resume-pdf-chrome-"));
+
+    if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+        return {
+            executablePath: process.env.PUPPETEER_EXECUTABLE_PATH,
+            args: ["--no-sandbox", "--disable-setuid-sandbox"],
+            userDataDir
+        };
+    }
+
+    if (process.env.NODE_ENV === "production") {
+        try {
+            const { default: chromium } = await import("@sparticuz/chromium");
+            const executablePath = await chromium.executablePath();
+
+            return {
+                executablePath,
+                args: [...chromium.args, "--no-sandbox", "--disable-setuid-sandbox"],
+                headless: "shell",
+                userDataDir
+            };
+        } catch (error) {
+            if (error?.code !== "ERR_MODULE_NOT_FOUND") {
+                throw error;
+            }
+        }
+    }
+
+    return {
+        executablePath: puppeteer.executablePath(),
+        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+        userDataDir
+    };
+}
+
 function escapeHtml(value = "") {
     return String(value)
         .replace(/&/g, "&amp;")
@@ -649,13 +685,13 @@ function buildResumeHtml({ resume, selfDescription, jobDescription }) {
 }
 
 async function generatePdfFromHtml(htmlContent) {
-    const userDataDir = await fs.mkdtemp(path.join(os.tmpdir(), "resume-pdf-chrome-"));
+    const launchOptions = await getBrowserLaunchOptions();
     let browser;
 
     try {
         browser = await puppeteer.launch({
             headless: true,
-            userDataDir
+            ...launchOptions
         });
         const page = await browser.newPage();
         await page.setContent(htmlContent, { waitUntil: "networkidle0" });
@@ -673,7 +709,9 @@ async function generatePdfFromHtml(htmlContent) {
             await browser.close().catch(() => null);
         }
 
-        await fs.rm(userDataDir, { recursive: true, force: true }).catch(() => null);
+        if (launchOptions.userDataDir) {
+            await fs.rm(launchOptions.userDataDir, { recursive: true, force: true }).catch(() => null);
+        }
     }
 }
 
