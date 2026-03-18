@@ -4,7 +4,6 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "postinstall": "node ./scripts/install-chrome.js",
     "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -14,6 +13,7 @@
   "description": "",
   "dependencies": {
     "@google/genai": "^1.45.0",
+    "@sparticuz/chromium": "^138.0.2",
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",

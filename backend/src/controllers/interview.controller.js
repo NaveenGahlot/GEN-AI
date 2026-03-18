@@ -50,7 +50,16 @@ export const generateInterviewReportController = async (req, res) => {
 
     } catch (err) {
         console.error("Error generating interview report:", err);
-        res.status(500).json({ message: "Internal server error", error: err.message });
+        if (err?.retryAfterSeconds) {
+            res.set("Retry-After", String(err.retryAfterSeconds));
+        }
+
+        res.status(err?.statusCode || 500).json({
+            message: err?.statusCode === 429
+                ? "Gemini API quota exceeded. Please try again later."
+                : "Internal server error",
+            error: err?.error || err.message
+        });
     }
 };
 
@@ -114,9 +123,16 @@ export const generateResumePdfController = async(req, res) => {
         res.send(pdfBuffer)
     } catch (err) {
         console.error("Error generating resume PDF:", err)
-        res.status(500).json({
-            message: "Failed to generate resume PDF",
-            error: err.message
+        if (err?.retryAfterSeconds) {
+            res.set("Retry-After", String(err.retryAfterSeconds));
+        }
+
+        res.status(err?.statusCode || 500).json({
+            message: err?.statusCode === 429
+                ? "Gemini API quota exceeded. Please try again later."
+                : "Failed to generate resume PDF",
+            error: err?.error || err.message,
+            retryAfterSeconds: err?.retryAfterSeconds || null
         })
     }
 }
