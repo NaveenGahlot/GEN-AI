@@ -87,3 +87,4 @@ Frontend variables:
 - `GET /api/interviews/`
 - `GET /api/interviews/report/:interviewId`
 - `POST /api/interviews/resume/pdf/:interviewReportId`
+https://roleplay-ai.netlify.app/login
