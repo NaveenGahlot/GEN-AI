@@ -24,7 +24,7 @@ export const useAuth = () => {
             setLoading(false)
         }
     }
-
+      // handleRegister 
     const handleRegister = async ({ username, email, password }) => {
         setLoading(true)
         try {
