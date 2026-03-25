@@ -7,7 +7,7 @@ import { clearAuthToken, setAuthToken } from "../../../lib/authToken"
 export const useAuth = () => {
     const context = useContext(AuthContext)
     const { user, setUser, loading, setLoading } = context
-
+    // handleLogin
     const handleLogin = async ({ email, password }) => {
         setLoading(true)
         try {
